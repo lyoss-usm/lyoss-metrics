@@ -1,0 +1,48 @@
+## Issues (GraphQL)  [23 items]
+    id:integer  number:integer  author.login:string  state:string  created_at:string
+    closed_at:null|string
+## Pull Requests (GraphQL)  [41 items]
+    id:integer  number:integer  author.login:string  state:string  created_at:string
+    merged_at:null|string  closed_at:string
+## Commits (GraphQL)  [100 items]
+    sha:string  author.user.login:string  author.date:string
+## Repos de la org (REST)  [16 items]
+    id:integer  name:string  full_name:string  visibility:string  description:null|string
+    fork:boolean  archived:boolean  disabled:boolean  is_template:boolean
+    stargazers_count:integer  forks_count:integer  open_issues_count:integer  size:integer
+    created_at:string  updated_at:string  pushed_at:string  has_issues:boolean
+    has_projects:boolean  has_wiki:boolean  has_pages:boolean  has_discussions:boolean
+    allow_forking:boolean  language:null|string  topics:array  default_branch:string
+    license.key:null|string  custom_properties.active:string  custom_properties.help:string
+    custom_properties.display:string
+## Trending repos (REST search)  [100 items]
+    id:integer  name:string  full_name:string  visibility:string  description:null|string
+    fork:boolean  archived:boolean  disabled:boolean  is_template:boolean
+    stargazers_count:integer  forks_count:integer  open_issues_count:integer  size:integer
+    created_at:string  updated_at:string  pushed_at:string  has_issues:boolean
+    has_projects:boolean  has_wiki:boolean  has_pages:boolean  has_discussions:boolean
+    allow_forking:boolean  language:null|string  topics:array  default_branch:string
+    license.key:null|string
+## Traffic views (REST)  [14 items]
+    timestamp:string  count:integer  uniques:integer
+## Traffic clones (REST)  [14 items]
+    timestamp:string  count:integer  uniques:integer
+## Traffic referrers (REST)  [1 items]
+    referrer:string  count:integer  uniques:integer
+## Traffic paths (REST)  [10 items]
+    path:string  title:string  count:integer  uniques:integer
+
+Costo de una corrida completa (estimado)
+Peticion                        Pool     Costo/req  Reqs/run  Costo total  Detalle
+------------------------------  -------  ---------  --------  -----------  -------------------------------
+GraphQL issues+PRs (x16 repos)  graphql  1          16        16           88 issues, 113 PRs, 317 commits
+GraphQL commits (x16 repos)     graphql  1          17        17           317 commits
+REST /orgs/{org}/repos          core     1          1         1            16 repos
+REST /search/repositories       search   1          10        10           1000 resultados (tope 1000)
+REST traffic (x4 endpoints)     core     1          64        64           4 req x 16 repos
+
+  Total core    :    65   (limite 5000/h)
+  Total graphql :    33   (limite 5000 pts/h)
+  Total search  :    10   (limite 30/min)
+
+  Supuestos: GraphQL recorre los 16 repos de la org; trafico = 4 req x 16 repos.
