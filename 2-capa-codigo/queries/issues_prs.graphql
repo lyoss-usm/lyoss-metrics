@@ -1,0 +1,34 @@
+query {
+  repository(owner: "lyoss-usm", name: "Plataforma-CdRS") {
+    id: databaseId
+
+    issues(first: 100) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        id: databaseId
+        number
+        author {
+            login # user_login
+        }
+        state
+        created_at: createdAt
+        closed_at: closedAt
+      }
+    }
+
+    pullRequests(first: 100) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        id: databaseId
+        number
+        author {
+            login # user_login
+        }
+        state
+        created_at: createdAt
+        merged_at: mergedAt
+        closed_at: closedAt
+      }
+    }
+  }
+}
