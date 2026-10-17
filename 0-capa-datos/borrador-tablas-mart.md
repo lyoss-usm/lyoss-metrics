@@ -18,7 +18,7 @@
     - Porcentaje de pull requests integradas vs cerradas sin integracion vs actualmente abiertas
     - Promedio de duracion en dias que pasan abiertas las pull requests y/o las issues
     - Cantidad de workflows ejecutados por dia
-    - Porcentaje de workflows terminados en succes vs failure o cancelled
+    - Porcentaje de workflows terminados en succeeded vs failure o cancelled
     - Ranking de repositorios sin pushes, commits o pull requests en el ultimo mes
     - Categorizacion de repositorios segun su ultimo cambio (pushed_at): < 7d, < 30d, < 90d, +90d
 - ¿Que tanto usamos de las features que nos proporciona GH como organizacion?
@@ -31,3 +31,4 @@
 - Para el caso de metricas de "crecimiento" que necesitan mas de 1 ejecucion (las ejecuciones son por dia), se debe anunciar que la metrica no se puede calcular al no tener almenos datos sobre 2 dias. (se debe indicar que la metrica de cambio aplica para los n-1 dias incluidos)
 - Es responsabilidad del mart indicar que periodos estan incompletos o son no calculables.
 - Las visitas son totales no por unicos
+- Los marts se deben guiar unicamente por tareas no por extracciones para obtener datos.

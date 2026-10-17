@@ -7,8 +7,15 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de recoleccion |
-| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto la recolecicon |
-| STRING | result | resultado de la ejecucion complete,partial,error |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tare|
+| STRING | endpoint | Endpoint / Recurso consultado en la llamada (/graphql para graphql) |
+| INTEGER | page_number | Numero secuencial de la llamada |
+| BOOLEAN | has_more | si hay mas paginas despues de recibir la respuesta (false indica que es la ultima pagina y la tarea termino completa) |
+| STRING | cursor | cursor enviado, null para REST |
+| INTEGER | code | Codigo de respuesta HTTP (0 si es la fila de terminacion de la extraccion) |
+| STRING | message | mensaje de error HTTP o GraphQL, null si no hay error |
+| STRING | result | resultado de la llamada succeeded / failed |
 
 ### Tabla "repos"
 
@@ -17,6 +24,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | INTEGER | id | id del repositorio |
 | STRING | name | nombre del repositorio |
 | STRING | full_name | nombre completo con owner incluido |
@@ -55,6 +65,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | STRING | attribute | atributo por el cual se define la obtencion de "trending", ej: stars |
 | INTEGER | top_limit | limite de repositorios pedidos en la recoleccion del dato (>=100) |
 | INTEGER | top_ord | posicion en el top pedido en la recoleccion del dato |
@@ -92,6 +105,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | INTEGER | id | id del usuario |
 | STRING | login | nombre del usuario |
 | STRING | type | tipos de miembro de la organizacion |
@@ -103,6 +119,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | INTEGER | id | id de la ejecucion del workflow de GH Actions |
 | INTEGER | repo_id (repository.id) | id del repositorio donde ocurrio el workflow |
 | STRING | name | nombre del workflow |
@@ -118,6 +137,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | STRING | sha | hash que identifica al commit |
 | (desde el request) INTEGER | repo_id | id del repositorio al que pertenece |
 | (puede ser null) STRING | user_login (author.user.login) | nombre del autor |
@@ -130,6 +152,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | INTEGER | id | id de la PR |
 | INTEGER | number | numero correlativo de la PR en el repo |
 | (desde el request) INTEGER | repo_id | id del repositorio donde se abrio la PR |
@@ -146,6 +171,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | INTEGER | id | id de la issue |
 | INTEGER | number | numero correlativo de la issue en el repo |
 | (desde el request) INTEGER | repo_id | id del repositorio al que pertenece |
@@ -161,6 +189,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | INTEGER | repo_id | id del repositorio |
 | TIMESTAMP | timestamp (views[].timestamp) | Fecha del bloque de vistas UTC |
 | INTEGER | count (views[].count) | Cantidad total de vistas en ese dia |
@@ -173,6 +204,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | INTEGER | repo_id | id del repositorio |
 | TIMESTAMP | timestamp (clones[].timestamp) | Fecha del bloque de clones UTC |
 | INTEGER | count (clones[].count) | Cantidad de clonaciones en ese dia |
@@ -185,6 +219,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | INTEGER | repo_id | id del repositorio |
 | STRING | referrer | Dominio que origino la visita |
 | INTEGER | count | Vistas totales desde esa fuente |
@@ -197,6 +234,9 @@
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| TIMESTAMP | run_at | Fecha y hora UTC en la que se ejecuto el inicio de la recoleccion (es el mismo valor para todas las filas de la misma extraccion) |
+| STRING | task | identificador de la tarea de recoleccion del dato |
+| INTEGER | page_number | Numero secuencial de la llamada de la recoleccion del dato |
 | INTEGER | repo_id | id del repositorio |
 | STRING | path | ruta dentro del repositorio |
 | STRING | title | titulo de la pagina o archivo |
