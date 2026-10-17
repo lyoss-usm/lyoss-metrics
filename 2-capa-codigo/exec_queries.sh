@@ -79,6 +79,19 @@ CHECK_TYPES "$RESP_REST" 'map({
 })'
 PRINT_REST_COST
 
+
+echo "============================================="
+echo " 4. Trending Repos (REST)"
+echo "============================================="
+RESP_REST=$(REST "/search/repositories?q=created:>2026-09-17&sort=stars&order=desc&per_page=100")
+CHECK_TYPES "$RESP_REST" '.items | map({
+  id, name, full_name, visibility, description, fork, archived, disabled, is_template,
+  stargazers_count, forks_count, open_issues_count, size, created_at, updated_at, pushed_at,
+  has_issues, has_projects, has_wiki, has_pages, has_discussions, allow_forking, language, topics,
+  default_branch, license_key: .license?.key
+})'
+PRINT_REST_COST
+
 echo "============================================="
 echo " 4. Tráfico Total (REST)"
 echo "============================================="
