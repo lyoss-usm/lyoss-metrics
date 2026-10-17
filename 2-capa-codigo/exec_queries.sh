@@ -48,3 +48,18 @@ echo "============================================="
 echo "Commits"
 echo "============================================="
 GraphQL /queries/commits.graphql | jq .
+echo "============================================="
+echo "Actions"
+echo "============================================="
+REST "/repos/lyoss-usm/Plataforma-CdRS/actions/runs" | jq '.workflow_runs[0] | {id, repo_id: .repository.id, name, status, conclusion, created_at, updated_at}'
+echo "============================================="
+echo "Users"
+echo "============================================="
+REST "/orgs/lyoss-usm/members" | jq '.[0] | {id, login, type}'
+echo "============================================="
+echo "Traffico"
+echo "============================================="
+REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/views" | jq '{views: .views[0]}'
+REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/clones" | jq '{clones: .clones[0]}'
+REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/popular/referrers" | jq '{referrers: .}'
+REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/popular/paths" | jq '{paths: .}'
