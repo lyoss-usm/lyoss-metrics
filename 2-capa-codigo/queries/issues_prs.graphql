@@ -1,4 +1,11 @@
 query {
+  rateLimit {
+    cost
+    limit
+    remaining
+    resetAt
+  }
+
   repository(owner: "lyoss-usm", name: "Plataforma-CdRS") {
     id: databaseId
 
