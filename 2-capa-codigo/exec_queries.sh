@@ -63,3 +63,39 @@ REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/views" | jq '{views: .views[0]}'
 REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/clones" | jq '{clones: .clones[0]}'
 REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/popular/referrers" | jq '{referrers: .}'
 REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/popular/paths" | jq '{paths: .}'
+echo "============================================="
+echo "Repos"
+echo "============================================="
+REST "/orgs/lyoss-usm/repos?per_page=100" | jq '.[0] | {
+  id,
+  name,
+  full_name,
+  visibility,
+  description,
+  fork,
+  archived,
+  disabled,
+  is_template,
+  stargazers_count,
+  forks_count,
+  open_issues_count,
+  size,
+  created_at,
+  updated_at,
+  pushed_at,
+  has_issues,
+  has_projects,
+  has_wiki,
+  has_pages,
+  has_discussions,
+  allow_forking,
+  language,
+  topics,
+  default_branch,
+  license_key: .license?.key,
+  custom_active: .custom_properties?.active,
+  custom_help: .custom_properties?.help,
+  custom_display: .custom_properties?.display
+}'
+
+# NOTA: tal parece que custom_active y custom_help sin strings XD
