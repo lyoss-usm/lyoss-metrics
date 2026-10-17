@@ -25,7 +25,6 @@ BOOLEAN disabled : true si el repo esta deshabilitado
 BOOLEAN is_template : true si el repo es una plantilla
 
 INTEGER stargazers_count : numero de estrellas del repo
-INTEGER subscribers_count : numero de usuarios siguiendo el repo
 INTEGER forks_count : numero de forks hecho al repo
 INTEGER open_issues_count : issues y prs abiertas del repo
 INTEGER size : tamaño en KB del repo
@@ -46,11 +45,10 @@ ARRAY<STRINGS> topics : Lista de tags asignados al repo
 STRING default_branch : nombre de la rama por defecto
 (puede ser null) STRING license_key (license.key) : Identificador corto de la licencia
 
-BOOLEAN custom_active (custom_properties.active) : El proyecto esta marcado como activo a la fecha
-BOOLEAN custom_help (custom_properties.help) : El proyecto esta marcado como que necesita apoyo/ayuda
+STRING custom_active (custom_properties.active) : El proyecto esta marcado como activo a la fecha "true" o "false"
+STRING custom_help (custom_properties.help) : El proyecto esta marcado como que necesita apoyo/ayuda "true" o "false"
 STRING custom_display (custom_properties.display) : Nick del repositorio para vistas publicas
 
-> Los campos "custom_active" y "custom_help" son strings de booleanos en la respuesta de la API
 
 ### Tabla "users"
 
@@ -78,18 +76,18 @@ TIMESTAMP updated_at : cuando termino o actualizo su estado por ultima vez
 
 ### Tabla "commits"
 
-> Obtenido desde GraphQl
+> Obtenido desde GraphQL
 
 INTEGER extraction_id : id de la ejecucion de la recoleccion del dato
 
 STRING sha : hash que identifica al commit
 (desde el request) INTEGER repo_id : id del repositorio al que pertenece
 (puede ser null) STRING user_login (author.user.login) : nombre del autor
-TIMESTAMP commit_date (author.user.date) : Fecha y hora en que se hizo el commit
+TIMESTAMP commit_date (author.date) : Fecha y hora en que se hizo el commit
 
 ### Tabla "pull_requests"
 
-> Obtenido desde Graph
+> Obtenido desde GraphQL
 
 INTEGER extraction_id : id de la ejecucion de la recoleccion del dato
 
@@ -104,7 +102,7 @@ TIMESTAMP created_at : fecha de creacion de la PR
 
 ### Tabla "issues"
 
-> Obtenido desde GET /repos/{owner}/{repo}/issues
+> Obtenido desde GraphQL
 
 INTEGER extraction_id : id de la ejecucion de la recoleccion del dato
 
@@ -151,7 +149,7 @@ INTEGER uniques : Visitantes unicos desde esa fuente
 
 ### Tabla "traffic_paths"
 
-> Obtenido desde GET get/repos/{owner}/{repo}/traffic/popular/paths
+> Obtenido desde GET /repos/{owner}/{repo}/traffic/popular/paths
 
 INTEGER extraction_id : id de la ejecucion de la recoleccion del dato
 
