@@ -47,6 +47,41 @@
 | STRING | custom_help (custom_properties.help) | El proyecto esta marcado como que necesita apoyo/ayuda "true" o "false" |
 | STRING | custom_display (custom_properties.display) | Nick del repositorio para vistas publicas |
 
+
+### Tabla "trending_repos"
+
+> Se obtiene listando los repos disponibles en GET //search/repositories con parametros de query para las fechas de creacion y orden por estrellas
+
+| Tipo de dato | Campo | Descripción |
+| --- | --- | --- |
+| INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| INTEGER | id | id del repositorio |
+| STRING | name | nombre del repositorio |
+| STRING | full_name | nombre completo con owner incluido |
+| STRING | visibility | visibilidad explicita public,private,internal |
+| (puede ser null) STRING | description | descripcion del repo |
+| BOOLEAN | fork | true si es un fork |
+| BOOLEAN | archived | true si el repo esta en modo solo lectura |
+| BOOLEAN | disabled | true si el repo esta deshabilitado |
+| BOOLEAN | is_template | true si el repo es una plantilla |
+| INTEGER | stargazers_count | numero de estrellas del repo |
+| INTEGER | forks_count | numero de forks hecho al repo |
+| INTEGER | open_issues_count | issues y prs abiertas del repo |
+| INTEGER | size | tamaño en KB del repo |
+| TIMESTAMP | created_at | Fecha y hora de creacion |
+| TIMESTAMP | updated_at | Fecha y hora de la ultima actualizacion de metadatos o codigo |
+| TIMESTAMP | pushed_at | Fecha y hora del ultimo push enviado a cualquier rama |
+| BOOLEAN | has_issues | tiene issues habilitadas |
+| BOOLEAN | has_projects | tiene projects habilitados |
+| BOOLEAN | has_wiki | tiene wiki habilitada |
+| BOOLEAN | has_pages | tiene github pages activado |
+| BOOLEAN | has_discussions | tiene discusiones habilitadas |
+| BOOLEAN | allow_forking | se permite realizar forks al repo |
+| (puede ser null) STRING | language | Lenguaje principal detectado |
+| ARRAY<STRINGS> | topics | Lista de tags asignados al repo |
+| STRING | default_branch | nombre de la rama por defecto |
+| (puede ser null) STRING | license_key (license.key) | Identificador corto de la licencia |
+
 ### Tabla "users"
 
 > Obtenido desde GET /orgs/{org}/members
