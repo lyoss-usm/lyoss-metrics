@@ -27,6 +27,11 @@ ORG = "lyoss-usm"
 REPO = "Plataforma-CdRS"
 PER_PAGE = 100
 SEARCH_MAX_RESULTS = 1000  # tope duro de /search
+# Decisiones de 0-capa-datos/general.md y borrador-tablas-raw.md
+TRENDING_DAYS = 7      # "creados desde 7 dias antes de run_at"
+TOP_LIMIT = 100        # top_limit de la ingesta (>=100); pendiente de definir
+TRENDING_ATTR = "stars"
+BUDGET_PCT = 5         # suposicion: la ingesta ronda el 5% de la cuota por hora
 
 # --- Modelo esperado: rutas con punto; "author.login" navega objetos anidados ---------
 REPO_FIELDS = [
@@ -40,6 +45,9 @@ ORG_REPO_FIELDS = REPO_FIELDS + [
     "custom_properties.active", "custom_properties.help", "custom_properties.display",
 ]
 TRAFFIC_FIELDS = ["timestamp", "count", "uniques"]
+USER_FIELDS = ["id", "login", "type"]
+ACTION_FIELDS = ["id", "repository.id", "name", "status", "conclusion", "created_at",
+                 "updated_at"]
 
 TYPE_NAMES = {str: "string", int: "integer", float: "number", bool: "boolean",
               list: "array", dict: "object", type(None): "null"}
@@ -353,8 +361,8 @@ def audit_graphql(cl, full):
         for title, conn, paths in specs[kind]:
             report_fields(title, items[conn], paths)
         add_cost(f"{labels[kind]} (x{len(repos)} repos)", "graphql", unit, reqs,
-                 f"{sum(r['issues'] for r in repos)} issues, {sum(r['prs'] for r in repos)} PRs, "
-                 f"{sum(r['commits'] for r in repos)} commits" if kind == "issues_prs"
+                 (f"{sum(r['issues'] for r in repos)} issues, "
+                  f"{sum(r['prs'] for r in repos)} PRs") if kind == "issues_prs"
                  else f"{sum(r['commits'] for r in repos)} commits", total=cost)
     return len(repos)
 
@@ -376,14 +384,50 @@ def main():
     report_fields("Repos de la org (REST)", repos, ORG_REPO_FIELDS, err)
     add_cost("REST /orgs/{org}/repos", "core", 1, pages, f"{n_repos} repos")
 
-    # 4. Trending (search)
-    since = (date.today() - timedelta(days=30)).isoformat()
-    trending, pages, n_tr, err = rest_list(
-        cl, "/search/repositories", "items", full,
-        q=f"created:>{since}", sort="stars", order="desc")
-    report_fields("Trending repos (REST search)", trending, REPO_FIELDS, err)
-    add_cost("REST /search/repositories", "search", 1, pages,
-             f"{n_tr} resultados (tope {SEARCH_MAX_RESULTS})")
+    # 4. Trending (search): solo hasta TOP_LIMIT resultados
+    since = (date.today() - timedelta(days=TRENDING_DAYS)).isoformat()
+    t_pages = math.ceil(TOP_LIMIT / PER_PAGE)
+    trending, err, r = [], None, None
+    for page in range(1, (t_pages if full else 1) + 1):
+        r = cl.get("/search/repositories", per_page=min(PER_PAGE, TOP_LIMIT), page=page,
+                   q=f"created:>{since}", sort=TRENDING_ATTR, order="desc")
+        if not r.ok:
+            err = error_of(r)
+            break
+        trending += r.json()["items"]
+    report_fields("Trending repos (REST search)", trending[:TOP_LIMIT], REPO_FIELDS, err)
+    total_tr = r.json().get("total_count", 0) if r is not None and r.ok else 0
+    add_cost("REST /search/repositories", "search", 1, t_pages,
+             f"top_limit={TOP_LIMIT}, {total_tr} repos creados en {TRENDING_DAYS}d")
+
+    # 4b. Miembros de la org
+    users, u_pages, n_users, err = rest_list(cl, f"/orgs/{ORG}/members", None, full)
+    report_fields("Miembros de la org (REST)", users, USER_FIELDS, err)
+    add_cost("REST /orgs/{org}/members", "core", 1, u_pages, f"{n_users} miembros")
+
+    # 4c. Workflow runs: historial completo por repo (las raw solo agregan)
+    runs, a_reqs, n_runs = [], 0, 0
+    for repo in repos:
+        r = cl.get(f"/repos/{ORG}/{repo['name']}/actions/runs", per_page=PER_PAGE)
+        a_reqs += 1
+        if not r.ok:
+            continue
+        body = r.json()
+        n_runs += body.get("total_count", 0)
+        runs += body["workflow_runs"]
+        pages_repo = max(1, math.ceil(body.get("total_count", 0) / PER_PAGE))
+        if full:
+            while "next" in r.links:
+                r = cl.get(r.links["next"]["url"])
+                a_reqs += 1
+                if not r.ok:
+                    break
+                runs += r.json()["workflow_runs"]
+        else:
+            a_reqs += pages_repo - 1
+    report_fields("Workflow runs (REST)", runs, ACTION_FIELDS)
+    add_cost("REST actions/runs (x repos)", "core", 1, a_reqs,
+             f"{n_runs} runs en {len(repos)} repos")
 
     # 5. Trafico: 4 endpoints por repo
     base = f"/repos/{ORG}/{REPO}/traffic"
@@ -431,12 +475,15 @@ def main():
     for r in rows:
         print(fmt(r))
     print()
-    limits = {"core": "5000/h", "graphql": "5000 pts/h", "search": "30/min"}
+    limits = {"core": (5000, "5000/h"), "graphql": (5000, "5000 pts/h"),
+              "search": (30, "30/min")}
     for pool in ("core", "graphql", "search"):
         total = sum(c["total"] for c in costs if c["pool"] == pool)
-        print(f"  Total {pool:<8}: {total:>5}   (limite {limits[pool]})")
+        lim, lim_s = limits[pool]
+        flag = "  <-- supera presupuesto" if pool != "search" and total * 100 > BUDGET_PCT * lim else ""
+        print(f"  Total {pool:<8}: {total:>5}   {100 * total / lim:5.1f}% de {lim_s}{flag}")
     print(f"\n  Supuestos: GraphQL recorre los {n_gql_repos} repos de la org; trafico = 4 req"
-          f" x {n_repos} repos.")
+          f" x {n_repos} repos. Presupuesto: {BUDGET_PCT}% de la cuota/h.")
 
 
 if __name__ == "__main__":

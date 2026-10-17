@@ -1,3 +1,4 @@
+
 ## Issues (GraphQL)  [23 items]
     id:integer  number:integer  author.login:string  state:string  created_at:string
     closed_at:null|string
@@ -23,6 +24,11 @@
     has_projects:boolean  has_wiki:boolean  has_pages:boolean  has_discussions:boolean
     allow_forking:boolean  language:null|string  topics:array  default_branch:string
     license.key:null|string
+## Miembros de la org (REST)  [11 items]
+    id:integer  login:string  type:string
+## Workflow runs (REST)  [143 items]
+    id:integer  repository.id:integer  name:string  status:string  conclusion:string
+    created_at:string  updated_at:string
 ## Traffic views (REST)  [14 items]
     timestamp:string  count:integer  uniques:integer
 ## Traffic clones (REST)  [14 items]
@@ -33,16 +39,18 @@
     path:string  title:string  count:integer  uniques:integer
 
 Costo de una corrida completa (estimado)
-Peticion                        Pool     Costo/req  Reqs/run  Costo total  Detalle
-------------------------------  -------  ---------  --------  -----------  -------------------------------
-GraphQL issues+PRs (x16 repos)  graphql  1          16        16           88 issues, 113 PRs, 317 commits
-GraphQL commits (x16 repos)     graphql  1          17        17           317 commits
-REST /orgs/{org}/repos          core     1          1         1            16 repos
-REST /search/repositories       search   1          10        10           1000 resultados (tope 1000)
-REST traffic (x4 endpoints)     core     1          64        64           4 req x 16 repos
+Peticion                        Pool     Costo/req  Reqs/run  Costo total  Detalle                                   
+------------------------------  -------  ---------  --------  -----------  ------------------------------------------
+GraphQL issues+PRs (x16 repos)  graphql  1          16        16           88 issues, 113 PRs                        
+GraphQL commits (x16 repos)     graphql  1          17        17           317 commits                               
+REST /orgs/{org}/repos          core     1          1         1            16 repos                                  
+REST /search/repositories       search   1          1         1            top_limit=100, 2408685 repos creados en 7d
+REST /orgs/{org}/members        core     1          1         1            11 miembros                               
+REST actions/runs (x repos)     core     1          17        17           220 runs en 16 repos                      
+REST traffic (x4 endpoints)     core     1          64        64           4 req x 16 repos                          
 
-  Total core    :    65   (limite 5000/h)
-  Total graphql :    33   (limite 5000 pts/h)
-  Total search  :    10   (limite 30/min)
+  Total core    :    83     1.7% de 5000/h
+  Total graphql :    33     0.7% de 5000 pts/h
+  Total search  :     1     3.3% de 30/min
 
-  Supuestos: GraphQL recorre los 16 repos de la org; trafico = 4 req x 16 repos.
+  Supuestos: GraphQL recorre los 16 repos de la org; trafico = 4 req x 16 repos. Presupuesto: 5% de la cuota/h.
