@@ -44,10 +44,27 @@ Peticion                        Pool     Costo/req  Reqs/run  Costo total  Detal
 GraphQL issues+PRs (x16 repos)  graphql  1          16        16           88 issues, 113 PRs                        
 GraphQL commits (x16 repos)     graphql  1          17        17           317 commits                               
 REST /orgs/{org}/repos          core     1          1         1            16 repos                                  
-REST /search/repositories       search   1          1         1            top_limit=100, 2408685 repos creados en 7d
+REST /search/repositories       search   1          1         1            top_limit=100, 2409827 repos creados en 7d
 REST /orgs/{org}/members        core     1          1         1            11 miembros                               
 REST actions/runs (x repos)     core     1          17        17           220 runs en 16 repos                      
 REST traffic (x4 endpoints)     core     1          64        64           4 req x 16 repos                          
+
+Peso de una corrida (logico BigQuery, aprox.)
+Tabla                            Filas   B/fila     KB/run
+----------------------------  --------  -------  ---------
+Issues (GraphQL)                    88       63        5.4
+Pull Requests (GraphQL)            113       73        8.1
+Commits (GraphQL)                  317       76       23.4
+Repos de la org (REST)              16      249        3.9
+Trending repos (REST search)       100      340       33.2
+Miembros de la org (REST)           11       33        0.4
+Workflow runs (REST)               220       89       19.1
+Traffic views (REST)               224       40        8.8
+Traffic clones (REST)              224       40        8.8
+Traffic referrers (REST)            16       44        0.7
+Traffic paths (REST)               160       77       12.1
+
+  Total/run: 123.8 KB | acumulado 1 año (1 run/dia): 0.04 GB (0.4% de los 10 GB gratis de storage)
 
   Total core    :    83     1.7% de 5000/h
   Total graphql :    33     0.7% de 5000 pts/h

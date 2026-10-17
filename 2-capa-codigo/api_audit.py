@@ -134,9 +134,28 @@ def wrap(entries, indent="    ", width=100):
 
 
 reports = []  # (titulo, n_items, found, missing, error)
+ROW_BYTES = {}  # titulo -> bytes logicos promedio por fila en BigQuery
+ROWS = {}       # titulo -> filas por corrida (estimadas o medidas)
+ISO_TS = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
 
 
-def report_fields(title, items, paths, error=None):
+def bq_bytes(v):
+    """Tamano logico de BigQuery: INT64/FLOAT/TIMESTAMP 8, BOOL 1, STRING 2+utf8, NULL 0."""
+    if v is None or v is MISSING:
+        return 0
+    if isinstance(v, bool):
+        return 1
+    if isinstance(v, (int, float)):
+        return 8
+    if isinstance(v, str):
+        return 8 if ISO_TS.match(v) else 2 + len(v.encode())
+    if isinstance(v, list):
+        return sum(bq_bytes(x) for x in v)
+    return 0
+
+
+def report_fields(title, items, paths, error=None, extra=8):
+    """extra: bytes de columnas que no vienen de la API (extraction_id 8, repo_id 8...)."""
     if error:
         reports.append((title, 0, {}, [], error))
         return
@@ -145,6 +164,8 @@ def report_fields(title, items, paths, error=None):
         missing = []  # sin datos no se puede afirmar nada
         reports.append((title, 0, {}, [], "sin items en la respuesta (no verificable)"))
         return
+    ROW_BYTES[title] = extra + sum(
+        bq_bytes(resolve(it, p)) for it in items for p in paths) / len(items)
     reports.append((title, len(items), found, missing, None))
 
 
@@ -359,7 +380,10 @@ def audit_graphql(cl, full):
                 report_fields(title, [], [], error=str(e))
             continue
         for title, conn, paths in specs[kind]:
-            report_fields(title, items[conn], paths)
+            report_fields(title, items[conn], paths, extra=16)
+        for title, conn, _ in specs[kind]:
+            ROWS[title] = sum(r[{"issues": "issues", "pullRequests": "prs",
+                                 "history": "commits"}[conn]] for r in repos)
         add_cost(f"{labels[kind]} (x{len(repos)} repos)", "graphql", unit, reqs,
                  (f"{sum(r['issues'] for r in repos)} issues, "
                   f"{sum(r['prs'] for r in repos)} PRs") if kind == "issues_prs"
@@ -382,6 +406,7 @@ def main():
     # 3. Repos de la org
     repos, pages, n_repos, err = rest_list(cl, f"/orgs/{ORG}/repos", None, full)
     report_fields("Repos de la org (REST)", repos, ORG_REPO_FIELDS, err)
+    ROWS["Repos de la org (REST)"] = n_repos
     add_cost("REST /orgs/{org}/repos", "core", 1, pages, f"{n_repos} repos")
 
     # 4. Trending (search): solo hasta TOP_LIMIT resultados
@@ -395,7 +420,9 @@ def main():
             err = error_of(r)
             break
         trending += r.json()["items"]
-    report_fields("Trending repos (REST search)", trending[:TOP_LIMIT], REPO_FIELDS, err)
+    report_fields("Trending repos (REST search)", trending[:TOP_LIMIT], REPO_FIELDS, err,
+                  extra=8 * 4 + len(TRENDING_ATTR) + 2)  # extraction_id, attribute, top_limit, top_ord
+    ROWS["Trending repos (REST search)"] = TOP_LIMIT
     total_tr = r.json().get("total_count", 0) if r is not None and r.ok else 0
     add_cost("REST /search/repositories", "search", 1, t_pages,
              f"top_limit={TOP_LIMIT}, {total_tr} repos creados en {TRENDING_DAYS}d")
@@ -403,6 +430,7 @@ def main():
     # 4b. Miembros de la org
     users, u_pages, n_users, err = rest_list(cl, f"/orgs/{ORG}/members", None, full)
     report_fields("Miembros de la org (REST)", users, USER_FIELDS, err)
+    ROWS["Miembros de la org (REST)"] = n_users
     add_cost("REST /orgs/{org}/members", "core", 1, u_pages, f"{n_users} miembros")
 
     # 4c. Workflow runs: historial completo por repo (las raw solo agregan)
@@ -426,6 +454,7 @@ def main():
         else:
             a_reqs += pages_repo - 1
     report_fields("Workflow runs (REST)", runs, ACTION_FIELDS)
+    ROWS["Workflow runs (REST)"] = n_runs
     add_cost("REST actions/runs (x repos)", "core", 1, a_reqs,
              f"{n_runs} runs en {len(repos)} repos")
 
@@ -445,7 +474,9 @@ def main():
             report_fields(f"{title} (REST)", [], paths, error_of(r))
         else:
             body = r.json()
-            report_fields(f"{title} (REST)", body[key] if key else body, paths)
+            rows_ = body[key] if key else body
+            report_fields(f"{title} (REST)", rows_, paths, extra=16)
+            ROWS[f"{title} (REST)"] = len(rows_) * max(n_repos, 1)
     add_cost("REST traffic (x4 endpoints)", "core", 1, 4 * max(n_repos, 1),
              f"4 req x {n_repos} repos")
 
@@ -475,6 +506,20 @@ def main():
     for r in rows:
         print(fmt(r))
     print()
+    # Peso de una corrida: filas x bytes logicos de BigQuery (sin compresion)
+    sizes = [(t, ROWS[t], ROW_BYTES[t]) for t in ROW_BYTES if t in ROWS]
+    w = max(len(t) for t, _, _ in sizes)
+    print("Peso de una corrida (logico BigQuery, aprox.)")
+    print(f"{'Tabla'.ljust(w)}  {'Filas':>8}  {'B/fila':>7}  {'KB/run':>9}")
+    print(f"{'-' * w}  {'-' * 8}  {'-' * 7}  {'-' * 9}")
+    total = 0
+    for t, n, b in sizes:
+        total += n * b
+        print(f"{t.ljust(w)}  {n:>8}  {b:>7.0f}  {n * b / 1024:>9.1f}")
+    per_year = total * 365 / 1024 ** 3
+    print(f"\n  Total/run: {total / 1024:.1f} KB | acumulado 1 año (1 run/dia): {per_year:.2f} GB"
+          f" ({100 * per_year / 10:.1f}% de los 10 GB gratis de storage)\n")
+
     limits = {"core": (5000, "5000/h"), "graphql": (5000, "5000 pts/h"),
               "search": (30, "30/min")}
     for pool in ("core", "graphql", "search"):
