@@ -4,12 +4,6 @@ SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 source "$SCRIPT_DIR/.env"
 
-if [ -z "${GH_TOKEN}" ]; then
-    echo "GH_TOKEN tiene que estar definida"
-    exit 1
-fi
-
-# ------------------------------------------------------ #
 API_VERSION="2026-03-10"
 API_BASE_URL="https://api.github.com"
 HEADER_TMP="/tmp/gh_headers.txt"
@@ -25,13 +19,7 @@ REST() {
 
 GraphQL() {
     QUERY_FILE="$SCRIPT_DIR$1"
-    if [ ! -f "$QUERY_FILE" ]; then
-        echo "El archivo $QUERY_FILE no existe." >&2
-        return 1
-    fi
-
     PAYLOAD=$(jq -n --rawfile q "$QUERY_FILE" '{query: $q}')
-
     curl -s -L \
       -H "Authorization: Bearer $GH_TOKEN" \
       -H "Content-Type: application/json" \
@@ -41,81 +29,67 @@ GraphQL() {
 }
 
 PRINT_REST_COST() {
-    REMAINING=$(grep -i "x-ratelimit-remaining" "$HEADER_TMP" | awk '{print $2}' | tr -d '\r')
-    echo -e "\n  Costo REST: 1 llamada | Peticiones restantes: $REMAINING\n"
+    REMAINING=$(grep -i -E "^x-ratelimit-remaining:" "$HEADER_TMP" | awk '{print $2}' | tr -d $'\r')
+    echo -e "\n  REST Remaining: $REMAINING\n"
 }
 
 PRINT_GQL_COST() {
-    JSON_PAYLOAD=$1
-    echo "$JSON_PAYLOAD" | jq -r '"\n  Costo GraphQL: \(.data.rateLimit.cost) puntos | Puntos restantes: \(.data.rateLimit.remaining)\n"'
+    echo "$1" | jq -r '"\n  GraphQL Costo: \(.data.rateLimit.cost) | Remaining: \(.data.rateLimit.remaining)\n"'
 }
 
-CHECK_FIELDS() {
-    JSON_PAYLOAD=$1
+CHECK_TYPES() {
+    JSON_ARRAY=$1
     JQ_FILTER=$2
-    echo "$JSON_PAYLOAD" | jq -r "$JQ_FILTER | to_entries[] | \"   [\(.value | type)] \(.key)\""
+    echo "$JSON_ARRAY" | jq -r "
+      $JQ_FILTER |
+      map(to_entries) | flatten | group_by(.key) |
+      map(\"   [\(map(.value | type) | unique | join(\", \"))] \(.[0].key)\") | .[]
+    "
 }
-
-# ------------------------------------------------------ #
 
 echo "============================================="
-echo " 1. Issues y PRs (GraphQL)"
+echo " 1. Issues y PRs (GraphQL - Muestra Completa)"
 echo "============================================="
 RESP_GQL=$(GraphQL "/queries/issues_prs.graphql")
-echo "Campos mapeados para Issues:"
-CHECK_FIELDS "$RESP_GQL" '.data.repository.issues.nodes[0] | {id, number, user_login: .author.login, state, created_at: .createdAt, closed_at: .closedAt}'
+echo "Tipos detectados en Issues:"
+CHECK_TYPES "$RESP_GQL" '.data.repository.issues.nodes | map({id, number, user_login: .author.login, state, created_at, closed_at})'
 echo "---"
-echo "Campos mapeados para Pull Requests:"
-CHECK_FIELDS "$RESP_GQL" '.data.repository.pullRequests.nodes[0] | {id, number, user_login: .author.login, state, created_at: .createdAt, merged_at: .mergedAt, closed_at: .closedAt}'
+echo "Tipos detectados en Pull Requests:"
+CHECK_TYPES "$RESP_GQL" '.data.repository.pullRequests.nodes | map({id, number, user_login: .author.login, state, created_at, merged_at, closed_at})'
 PRINT_GQL_COST "$RESP_GQL"
 
-
 echo "============================================="
-echo " 2. Commits (GraphQL)"
+echo " 2. Commits (GraphQL - Muestra Completa)"
 echo "============================================="
 RESP_GQL=$(GraphQL "/queries/commits.graphql")
-echo "Campos mapeados para Commits:"
-CHECK_FIELDS "$RESP_GQL" '.data.repository.defaultBranchRef.target.history.nodes[0] | {sha: .oid, user_login: .author.user.login, commit_date: .author.date}'
+echo "Tipos detectados en Commits:"
+CHECK_TYPES "$RESP_GQL" '.data.repository.defaultBranchRef.target.history.nodes | map({sha, user_login: .author.user.login, commit_date: .author.date})'
 PRINT_GQL_COST "$RESP_GQL"
 
-
 echo "============================================="
-echo " 3. Actions (REST)"
-echo "============================================="
-RESP_REST=$(REST "/repos/lyoss-usm/Plataforma-CdRS/actions/runs")
-echo "Campos mapeados para Actions:"
-CHECK_FIELDS "$RESP_REST" '.workflow_runs[0] | {id, repo_id: .repository.id, name, status, conclusion, created_at, updated_at}'
-PRINT_REST_COST
-
-
-echo "============================================="
-echo " 4. Users (REST)"
-echo "============================================="
-RESP_REST=$(REST "/orgs/lyoss-usm/members")
-echo "Campos mapeados para Users:"
-CHECK_FIELDS "$RESP_REST" '.[0] | {id, login, type}'
-PRINT_REST_COST
-
-
-echo "============================================="
-echo " 5. Tráfico: Views (REST)"
-echo "============================================="
-RESP_REST=$(REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/views")
-echo "Campos mapeados para Traffic Views:"
-CHECK_FIELDS "$RESP_REST" '.views[0] | {timestamp, count, uniques}'
-PRINT_REST_COST
-
-
-echo "============================================="
-echo " 6. Repos (REST)"
+echo " 3. Repos (REST)"
 echo "============================================="
 RESP_REST=$(REST "/orgs/lyoss-usm/repos?per_page=100")
-echo "Campos mapeados para Repos:"
-CHECK_FIELDS "$RESP_REST" '.[0] | {
+CHECK_TYPES "$RESP_REST" 'map({
   id, name, full_name, visibility, description, fork, archived, disabled, is_template,
   stargazers_count, forks_count, open_issues_count, size, created_at, updated_at, pushed_at,
-  has_issues, has_projects, has_wiki, has_pages, has_discussions, allow_forking, language,
+  has_issues, has_projects, has_wiki, has_pages, has_discussions, allow_forking, language, topics,
   default_branch, license_key: .license?.key, custom_active: .custom_properties?.active,
   custom_help: .custom_properties?.help, custom_display: .custom_properties?.display
-}'
+})'
 PRINT_REST_COST
+
+echo "============================================="
+echo " 4. Tráfico Total (REST)"
+echo "============================================="
+RESP_VIEWS=$(REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/views")
+echo "Tipos en Views:" && CHECK_TYPES "$RESP_VIEWS" '.views | map({timestamp, count, uniques})'
+
+RESP_CLONES=$(REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/clones")
+echo "Tipos en Clones:" && CHECK_TYPES "$RESP_CLONES" '.clones | map({timestamp, count, uniques})'
+
+RESP_REFS=$(REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/popular/referrers")
+echo "Tipos en Referrers:" && CHECK_TYPES "$RESP_REFS" 'map({referrer, count, uniques})'
+
+RESP_PATHS=$(REST "/repos/lyoss-usm/Plataforma-CdRS/traffic/popular/paths")
+echo "Tipos en Paths:" && CHECK_TYPES "$RESP_PATHS" 'map({path, title, count, uniques})'
