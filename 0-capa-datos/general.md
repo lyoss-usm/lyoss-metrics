@@ -20,3 +20,8 @@ Decisiones:
 
 Suposiciones:
 - Se trabaja con menos de 100 repos, y pasara bastante tiempo hasta llegar siquiera cerca. Esto mantiene el costo de la ingesta alrededor de un 5% de la cuota total por hora de la GH API.
+
+Restricciones:
+- La couta para la API REST en /repos y /org es 5000reqs/hora con un token autenticado
+- La couta para la API GraphQL es 5000pts/hora con un token autenticado
+- La couta para la API REST en /search es 30reqs/minuto con un token autenticado
