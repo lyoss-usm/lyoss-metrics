@@ -51,3 +51,10 @@ Formato: `<tabla>` o `<tabla>:<discriminador>`. El discriminador usa el id (no e
 | traffic_referrers | traffic_referrers:{repo_id} |
 | traffic_paths | traffic_paths:{repo_id} |
 | (fila de cierre en extractions) | terminate |
+
+## Visibilidad
+
+- Se publican dos informes: uno publico y otro privado. El privado muestra todos los datos; el publico solo muestra repositorios publicos.
+- El filtro usa la visibilidad **actual** del repositorio (la de la ultima version de repos), no la que tenia en cada dia. Consecuencia: si un repo pasa de privado a publico, su historial completo aparece en el informe publico; si pasa de publico a privado, desaparece de el.
+- En el informe publico los totales de "todos los repos" incluyen solo repositorios publicos.
+- Los logins y la pertenencia a la organizacion no tienen politica especial: ninguna metrica del dashboard los expone.

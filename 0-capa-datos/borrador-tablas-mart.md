@@ -32,3 +32,4 @@
 - Es responsabilidad del mart indicar que periodos estan incompletos o son no calculables.
 - Las visitas son totales no por unicos
 - Los marts se deben guiar unicamente por tareas no por extracciones para obtener datos.
+- Los marts son responsables de marcar a los datos como provisional (inmaduro) o normal (maduro).
