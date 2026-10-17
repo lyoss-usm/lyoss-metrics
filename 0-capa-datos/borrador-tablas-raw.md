@@ -50,11 +50,14 @@
 
 ### Tabla "trending_repos"
 
-> Se obtiene listando los repos disponibles en GET //search/repositories con parametros de query para las fechas de creacion y orden por estrellas
+> Se obtiene listando los repos disponibles en GET /search/repositories con parametros de query para las fechas de creacion, orden por "attribute" y limite por "top_limit". Esto es una aproximacion de trending, ya que GH no expone un endpoint para acceder a los globales.
 
 | Tipo de dato | Campo | Descripción |
 | --- | --- | --- |
 | INTEGER | extraction_id | id de la ejecucion de la recoleccion del dato |
+| STRING | attribute | atributo por el cual se define la obtencion de "trending", ej: stars |
+| INTEGER | top_limit | limite de repositorios pedidos en la recoleccion del dato (>=100) |
+| INTEGER | top_ord | posicion en el top pedido en la recoleccion del dato |
 | INTEGER | id | id del repositorio |
 | STRING | name | nombre del repositorio |
 | STRING | full_name | nombre completo con owner incluido |
