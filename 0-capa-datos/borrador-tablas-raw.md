@@ -78,25 +78,25 @@ TIMESTAMP updated_at : cuando termino o actualizo su estado por ultima vez
 
 ### Tabla "commits"
 
-> Obtenido desde GET /repos/{owner}/{repo}/commits
+> Obtenido desde GraphQl
 
 INTEGER extraction_id : id de la ejecucion de la recoleccion del dato
 
 STRING sha : hash que identifica al commit
 (desde el request) INTEGER repo_id : id del repositorio al que pertenece
-(puede ser null) STRING user_login (author.login) : nombre del autor
-TIMESTAMP commit_date (commit.author.date) : Fecha y hora en que se hizo el commit
+(puede ser null) STRING user_login (author.user.login) : nombre del autor
+TIMESTAMP commit_date (author.user.date) : Fecha y hora en que se hizo el commit
 
 ### Tabla "pull_requests"
 
-> Obtenido desde GET /repos/{owner}/{repo}/pulls
+> Obtenido desde Graph
 
 INTEGER extraction_id : id de la ejecucion de la recoleccion del dato
 
 INTEGER id : id de la PR
 INTEGER number : numero correlativo de la PR en el repo
 (desde el request) INTEGER repo_id : id del repositorio donde se abrio la PR
-STRING user_login (user.login) : nombre de quien abrio la PR
+STRING user_login (author.login) : nombre de quien abrio la PR
 STRING state : estado de la PR open,closed
 TIMESTAMP created_at : fecha de creacion de la PR
 (puede ser null) TIMESTAMP merged_at : fecha en que se integro el codigo relacionado
@@ -111,7 +111,7 @@ INTEGER extraction_id : id de la ejecucion de la recoleccion del dato
 INTEGER id : id de la issue
 INTEGER number : numero correlativo de la issue en el repo
 (desde el request) INTEGER repo_id : id del repositorio al que pertenece
-STRING user_login (user.login) : nombre de quien abrio la issue
+STRING user_login (author.login) : nombre de quien abrio la issue
 STRING state : estado de la issue open,closed
 TIMESTAMP created_at : fecha en la que se abrio la issue
 (puede ser null) TIMESTAMP closed_at : fecha en la que se cerro la issue
