@@ -11,7 +11,6 @@ STRING result : resultado de la ejecucion complete,partial,error
 ### Tabla "repos"
 
 > Se obtiene listando los repos disponibles en GET /orgs/{org}/repos
-> Luego se obtiene la info de cada repo con GET /repos/{owner}/{repo}
 
 INTEGER extraction_id : id de la ejecucion de la recoleccion del dato
 
@@ -50,6 +49,8 @@ STRING default_branch : nombre de la rama por defecto
 BOOLEAN custom_active (custom_properties.active) : El proyecto esta marcado como activo a la fecha
 BOOLEAN custom_help (custom_properties.help) : El proyecto esta marcado como que necesita apoyo/ayuda
 STRING custom_display (custom_properties.display) : Nick del repositorio para vistas publicas
+
+> Los campos "custom_active" y "custom_help" son strings de booleanos en la respuesta de la API
 
 ### Tabla "users"
 
