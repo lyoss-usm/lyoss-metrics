@@ -33,3 +33,41 @@
 - Las visitas son totales no por unicos
 - Los marts se deben guiar unicamente por tareas no por extracciones para obtener datos.
 - Los marts son responsables de marcar a los datos como provisional (inmaduro) o normal (maduro).
+
+## Tablas "mart"
+
+Los marts no son append-only: se reconstruyen en cada actualizacion diaria a partir de las tablas raw. Cada mart se publica en dos destinos: el privado (todos los repos) y el publico (solo repos con visibilidad actual public), por lo que no llevan columna de visibilidad.
+
+### Tabla "repos_snapshot" (familia: foto de repos)
+
+> Granularidad: una fila por repositorio, con su estado en la ultima ejecucion completa de la tarea `repos`. No guarda historial. Como `repos` es una unica tarea que lista toda la organizacion, todas las filas provienen de la misma extraccion; un repo eliminado o transferido desaparece al dejar de estar en esa foto.
+>
+> Responde: distribucion de licencias, % de features habilitadas, categorizacion por `pushed_at` (la categoria se calcula en el dashboard contra la fecha de la consulta, el mart solo entrega `pushed_at`).
+
+| Tipo de dato | Campo | Descripción |
+| --- | --- | --- |
+| INTEGER | repo_id | id del repositorio (repos.id) |
+| STRING | name | nombre actual del repositorio |
+| STRING | display_name | nick para vistas publicas (repos.custom_display, obligatorio en todos los repos) |
+| BOOLEAN | fork | true si es un fork |
+| BOOLEAN | archived | true si el repo esta en modo solo lectura |
+| BOOLEAN | disabled | true si el repo esta deshabilitado |
+| BOOLEAN | is_template | true si el repo es una plantilla |
+| STRING | license | repos.license_key, o "sin licencia" si es null |
+| BOOLEAN | has_issues | tiene issues habilitadas |
+| BOOLEAN | has_projects | tiene projects habilitados |
+| BOOLEAN | has_wiki | tiene wiki habilitada |
+| BOOLEAN | has_pages | tiene github pages activado |
+| BOOLEAN | has_discussions | tiene discusiones habilitadas |
+| BOOLEAN | allow_forking | se permite realizar forks al repo |
+| TIMESTAMP | pushed_at | fecha y hora del ultimo push; si es null se reemplaza por created_at |
+| DATE | snapshot_date | fecha UTC de run_at de la extraccion de la que proviene la fila |
+| BOOLEAN | fresh | true si snapshot_date es la fecha UTC de la ultima extraccion que escribio filas en alguna tabla raw de datos (completa o no); false si la fila viene de una ejecucion anterior |
+
+Decisiones:
+- No hay limite de antiguedad: una foto vieja sigue mostrandose con fresh = false mientras no haya una mas nueva.
+- No se contempla el caso de que el cronjob o los marts dejen de ejecutarse: en ese escenario los datos pueden figurar como frescos sin serlo.
+- `name` y `display_name` se entregan ambos; el consumidor elige cual mostrar.
+- El lenguaje principal y los topicos de nuestros repos viven en otro mart (familia trending).
+
+- "La ultima extraccion" se determina por los `run_at` de las filas de las tablas raw de datos (cualquier tarea, completa o incompleta), sin consultar `extractions`. Una extraccion que no escribio ninguna fila se considera como si no hubiera ocurrido.
