@@ -9,7 +9,14 @@ PROJECT_ID := $(shell gcloud config get-value project 2>/dev/null)
 endif
 export PROJECT_ID
 
-.PHONY: help install lock auth check-project db-raw db-test db-test-reset run run-task test audit clean
+# Imagen: {REGION}-docker.pkg.dev/{PROJECT_ID}/{AR_REPO}/collector:{AAAAMMDD-HHMM UTC}
+REGION ?= us-central1
+AR_REPO ?= lyoss
+export REGION AR_REPO
+IMAGE_BASE = $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(AR_REPO)/collector
+TAG_FILE = .last-image-tag
+
+.PHONY: help install lock auth check-project db-raw db-test db-test-reset run run-task test registry image push audit clean
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -44,6 +51,18 @@ run-task: ## Ejecuta una tarea: make run-task TASK=users [REPO_ID=123]
 
 test: ## Ejecuta los tests unitarios (pytest, sin red ni credenciales)
 	uv run pytest
+
+registry: check-project ## Crea el Artifact Registry (limpieza: 2 versiones) y configura Docker
+	./infra/03_artifact_registry.sh
+
+image: check-project ## Construye la imagen y la etiqueta con la fecha UTC (AAAAMMDD-HHMM)
+	@tag=$$(date -u +%Y%m%d-%H%M); \
+	docker build --platform linux/amd64 -t $(IMAGE_BASE):$$tag . && \
+	echo $$tag > $(TAG_FILE) && echo "Imagen construida: $(IMAGE_BASE):$$tag"
+
+push: check-project ## Sube la ultima imagen construida con `make image`
+	@test -f $(TAG_FILE) || { echo "No hay imagen construida: ejecuta make image"; exit 1; }
+	docker push $(IMAGE_BASE):$$(cat $(TAG_FILE))
 
 audit: ## Audita los endpoints de GitHub (usa GH_TOKEN de .env)
 	uv run python api_audit.py
