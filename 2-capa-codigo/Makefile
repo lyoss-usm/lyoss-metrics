@@ -9,7 +9,7 @@ PROJECT_ID := $(shell gcloud config get-value project 2>/dev/null)
 endif
 export PROJECT_ID
 
-.PHONY: help install lock auth check-project db-raw db-test db-test-reset run-repos audit clean
+.PHONY: help install lock auth check-project db-raw db-test db-test-reset run-task audit clean
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -35,8 +35,9 @@ db-test: check-project ## Crea el dataset raw_test y sus 12 tablas
 db-test-reset: check-project ## Borra y recrea raw_test desde cero
 	RESET=1 ./infra/02_create_raw_test.sh
 
-run-repos: ## Ejecuta la tarea repos (configuracion tomada de .env)
-	uv run python -m collector.main --task repos
+run-task: ## Ejecuta una tarea: make run-task TASK=users [REPO_ID=123]
+	@test -n "$(TASK)" || { echo "Uso: make run-task TASK=<tarea> [REPO_ID=N]"; exit 1; }
+	uv run python -m collector.main --task $(TASK) $(if $(REPO_ID),--repo-id $(REPO_ID))
 
 audit: ## Audita los endpoints de GitHub (usa GH_TOKEN de .env)
 	uv run python api_audit.py
