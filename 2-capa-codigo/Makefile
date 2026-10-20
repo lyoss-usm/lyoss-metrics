@@ -16,7 +16,7 @@ export REGION AR_REPO
 IMAGE_BASE = $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(AR_REPO)/collector
 TAG_FILE = .last-image-tag
 
-.PHONY: help install lock auth check-project db-raw db-test db-test-reset run run-task test registry image push audit clean
+.PHONY: help install lock auth check-project db-raw db-test db-test-reset run run-task verificar test registry image push audit clean
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -48,6 +48,19 @@ run: ## Corrida completa (la configuracion, incluido DATASET, sale de .env)
 run-task: ## Ejecuta una tarea: make run-task TASK=users [REPO_ID=123]
 	@test -n "$(TASK)" || { echo "Uso: make run-task TASK=<tarea> [REPO_ID=N]"; exit 1; }
 	uv run python -m collector.main --task $(TASK) $(if $(REPO_ID),--repo-id $(REPO_ID))
+
+verificar: check-project ## Verifica una extraccion: make verificar EID=<extraction_id> [DRY=1 solo estima bytes]
+	@test -n "$(EID)" || { echo "Uso: make verificar EID=<extraction_id> [DRY=1]"; exit 1; }
+	@ds=$${DATASET:-$$(sed -n 's/^DATASET=//p' .env | tr -d "'\"" | head -n1)}; \
+	test -n "$$ds" || { echo "DATASET vacio en .env"; exit 1; }; \
+	tmp=$$(mktemp -d); trap 'rm -rf $$tmp' EXIT; \
+	awk -v d="$$tmp" '/^-- ====/{n++} {print > sprintf("%s/q%02d.sql", d, n)}' sql/verificar_extraccion.sql; \
+	echo "dataset: $$ds | extraction_id: $(EID)"; \
+	for f in $$tmp/q0[1-9].sql; do \
+	  [ -f "$$f" ] || continue; echo; head -n1 "$$f"; \
+	  bq --project_id=$(PROJECT_ID) query --use_legacy_sql=false --dataset_id=$$ds $(if $(DRY),--dry_run) \
+	     --parameter=eid:INT64:$(EID) --format=pretty < "$$f" || exit 1; \
+	done
 
 test: ## Ejecuta los tests unitarios (pytest, sin red ni credenciales)
 	uv run pytest
