@@ -138,3 +138,11 @@ def test_extraction_row_refleja_la_pagina(ctx):
     row = mapping.extraction_row(ctx, "repos", "/e", 2, page)
     assert (row["page_number"], row["has_more"], row["cursor"], row["code"], row["message"], row["result"],
             row["endpoint"], row["task"]) == (2, True, None, 403, "no", "failed", "/e", "repos")
+
+
+def test_contrato_fila_terminate(ctx):
+    row = mapping.terminate_row(ctx)
+    assert set(row) == set(ddl_columns("extractions"))
+    assert [c for c, not_null in ddl_columns("extractions").items() if not_null and row[c] is None] == []
+    assert (row["task"], row["endpoint"], row["page_number"], row["has_more"], row["cursor"], row["code"],
+            row["message"], row["result"]) == ("terminate", "", 0, False, None, 0, None, "succeeded")
