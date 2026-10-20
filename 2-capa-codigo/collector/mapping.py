@@ -135,6 +135,22 @@ def traffic_path_row(item: dict[str, Any], ctx: RunContext, task: str, page_numb
             "uniques": item.get("uniques")}
 
 
+def terminate_row(ctx: RunContext) -> dict[str, Any]:
+    """Fila de cierre de la corrida en `extractions` (politicas.md: task `terminate`)."""
+    return {
+        "extraction_id": ctx.extraction_id,
+        "run_at": ctx.run_at_iso,
+        "task": "terminate",
+        "endpoint": "",
+        "page_number": 0,
+        "has_more": False,
+        "cursor": None,
+        "code": 0,
+        "message": None,
+        "result": "succeeded",
+    }
+
+
 def extraction_row(ctx: RunContext, task: str, endpoint: str, page_number: int, page) -> dict[str, Any]:
     """Fila de la tabla `extractions` para una pagina."""
     return {
