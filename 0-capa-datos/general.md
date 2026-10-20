@@ -18,6 +18,7 @@ Decisiones:
 - No existen reintentos de tareas dentro de la misma extraccion.
 - Es responsabilidad de los marts marcar los datos como provisional (inmaduro) o normal (maduro).
 - La vista publica solo muestra repositorios publicos, y el filtro usa la visibilidad actual del repo (ver politicas.md).
+- se seteo attribute = start y top_limit = 100
 
 Suposiciones:
 - Se trabaja con menos de 100 repos, y pasara bastante tiempo hasta llegar siquiera cerca. Esto mantiene el costo de la ingesta alrededor de un 5% de la cuota total por hora de la GH API.

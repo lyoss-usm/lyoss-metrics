@@ -58,3 +58,8 @@ Formato: `<tabla>` o `<tabla>:<discriminador>`. El discriminador usa el id (no e
 - El filtro usa la visibilidad **actual** del repositorio (la de la ultima version de repos), no la que tenia en cada dia. Consecuencia: si un repo pasa de privado a publico, su historial completo aparece en el informe publico; si pasa de publico a privado, desaparece de el.
 - En el informe publico los totales de "todos los repos" incluyen solo repositorios publicos.
 - Los logins y la pertenencia a la organizacion no tienen politica especial: ninguna metrica del dashboard los expone.
+
+## Casos borde
+- Si la tarea repo falla, solo se ejecutan las tareas independientes de repo: users y trending_repos
+- Un 403 sobre la consulta de trafico sobre un repo sin permisos es aceptable
+- Un repo vacio con 0 filas de commits cuenta como succeeded

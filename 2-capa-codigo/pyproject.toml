@@ -1,0 +1,17 @@
+[project]
+name = "lyoss-collector"
+version = "0.1.0"
+description = "Recolector diario de metricas de GitHub hacia BigQuery (capa raw)"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32",
+    "PyJWT>=2.9",
+    "cryptography>=43",
+    "google-cloud-secret-manager>=2.20",
+    "google-cloud-bigquery>=3.25",
+    "python-dotenv>=1.0",
+]
+
+[tool.uv]
+# Aplicacion, no libreria: uv instala solo las dependencias; `collector/` se ejecuta con `-m`.
+package = false

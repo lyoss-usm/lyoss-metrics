@@ -1,0 +1,38 @@
+CREATE TABLE IF NOT EXISTS `raw.trending_repos` (
+  extraction_id     INT64     NOT NULL,
+  run_at            TIMESTAMP NOT NULL,
+  task              STRING    NOT NULL,
+  page_number       INT64     NOT NULL,
+  attribute         STRING    NOT NULL,
+  top_limit         INT64     NOT NULL,
+  top_ord           INT64     NOT NULL,
+  id                INT64     NOT NULL,
+  name              STRING,
+  full_name         STRING,
+  visibility        STRING,
+  description       STRING,
+  fork              BOOL,
+  archived          BOOL,
+  disabled          BOOL,
+  is_template       BOOL,
+  stargazers_count  INT64,
+  forks_count       INT64,
+  open_issues_count INT64,
+  size              INT64,
+  created_at        TIMESTAMP,
+  updated_at        TIMESTAMP,
+  pushed_at         TIMESTAMP,
+  has_issues        BOOL,
+  has_projects      BOOL,
+  has_wiki          BOOL,
+  has_pages         BOOL,
+  has_discussions   BOOL,
+  allow_forking     BOOL,
+  language          STRING,
+  topics            ARRAY<STRING>,
+  default_branch    STRING,
+  license_key       STRING
+)
+PARTITION BY TIMESTAMP_TRUNC(run_at, MONTH)
+CLUSTER BY task
+OPTIONS (require_partition_filter = FALSE);
