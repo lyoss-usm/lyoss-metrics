@@ -9,7 +9,7 @@ PROJECT_ID := $(shell gcloud config get-value project 2>/dev/null)
 endif
 export PROJECT_ID
 
-.PHONY: help install lock auth check-project db-raw db-test db-test-reset run-task audit clean
+.PHONY: help install lock auth check-project db-raw db-test db-test-reset run-task test audit clean
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -38,6 +38,9 @@ db-test-reset: check-project ## Borra y recrea raw_test desde cero
 run-task: ## Ejecuta una tarea: make run-task TASK=users [REPO_ID=123]
 	@test -n "$(TASK)" || { echo "Uso: make run-task TASK=<tarea> [REPO_ID=N]"; exit 1; }
 	uv run python -m collector.main --task $(TASK) $(if $(REPO_ID),--repo-id $(REPO_ID))
+
+test: ## Ejecuta los tests unitarios (pytest, sin red ni credenciales)
+	uv run pytest
 
 audit: ## Audita los endpoints de GitHub (usa GH_TOKEN de .env)
 	uv run python api_audit.py

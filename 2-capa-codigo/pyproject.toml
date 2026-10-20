@@ -12,6 +12,16 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "responses>=0.25",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
 [tool.uv]
 # Aplicacion, no libreria: uv instala solo las dependencias; `collector/` se ejecuta con `-m`.
 package = false
