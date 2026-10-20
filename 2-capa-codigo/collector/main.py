@@ -9,6 +9,7 @@ Las tareas por repo sin --repo-id se ejecutan para todos los repos de la organiz
 (la lista se obtiene de la API y nunca de BigQuery).
 """
 import argparse
+import json
 import logging
 import os
 import sys
@@ -16,7 +17,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Mapping, Optional
 
 from dotenv import load_dotenv
 
@@ -243,9 +244,32 @@ def run(task: Optional[str] = None, repo_id: Optional[int] = None, *,
     return orchestrator.run_full() if task is None else orchestrator.run_single(task, repo_id)
 
 
+class JsonFormatter(logging.Formatter):
+    """Una linea JSON por registro, con la severidad que entiende Cloud Logging."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        message = record.getMessage()
+        if record.exc_info:  # la traza va en el mismo JSON (el salto de linea queda escapado)
+            message = f"{message}\n{self.formatException(record.exc_info)}"
+        elif record.exc_text:
+            message = f"{message}\n{record.exc_text}"
+        return json.dumps({"severity": record.levelname, "message": message, "logger": record.name},
+                          ensure_ascii=False)
+
+
+def build_log_handler(env: Mapping[str, str] = os.environ) -> logging.Handler:
+    """En Cloud Run (CLOUD_RUN_JOB definida): JSON a stdout. En local: texto legible a stderr."""
+    if "CLOUD_RUN_JOB" in env:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(JsonFormatter())
+    else:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    return handler
+
+
 def main() -> None:
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    logging.basicConfig(level=logging.INFO, handlers=[build_log_handler()])
     load_dotenv(Path(__file__).resolve().parent.parent / ".env")  # no pisa el entorno real
     ap = argparse.ArgumentParser(description="Recolector de metricas de GitHub (raw)")
     ap.add_argument("--task", choices=TASKS, help="ejecutar solo una tarea (por defecto: corrida completa)")
