@@ -2,7 +2,7 @@
 # Python 3.12 = version minima de requires-python (>=3.12) en pyproject.toml.
 
 # --- etapa 1: dependencias desde el lockfile congelado, sin grupo dev -------------------------
-FROM python:3.12-slim AS builder
+FROM python:3.15-slim AS builder
 COPY --from=ghcr.io/astral-sh/uv:0.11.28 /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
@@ -12,7 +12,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 # --- etapa 2: imagen final (sin uv ni cache de instalacion) -------------------------------------
-FROM python:3.12-slim
+FROM python:3.15-slim
 RUN useradd --system --create-home --uid 10001 app
 WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
